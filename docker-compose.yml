@@ -1,0 +1,21 @@
+version: '3.8'
+services:
+  nginx-proxy:
+    image: nginx:latest
+    container_name: nginx-top-level-proxy
+    ports:
+      - '8080:8080'
+      - '6080:6080'
+      - '80:80'
+      - '8080:8080'
+      - '6080:6080'
+      - '5432:5432'
+    volumes:
+      - ./config/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./generated/http_proxies.conf:/etc/nginx/http_proxies.conf:ro
+      - ./generated/tcp_proxies.conf:/etc/nginx/tcp_proxies.conf:ro
+    networks:
+      - docker-local-proxy
+networks:
+  docker-local-proxy:
+    external: true

@@ -1,0 +1,36 @@
+{
+  "name": "docker-local-proxy",
+  "version": "1.0.0",
+  "description": "A tool for automatically configuring Nginx and updating /etc/hosts based on Docker containers for local development environments.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "prepublishOnly": "npm run build"
+  },
+  "license": "MIT",
+  "keywords": [
+    "docker",
+    "nginx",
+    "proxy",
+    "local development",
+    "automation",
+    "configuration",
+    "docker-compose"
+  ],
+  "author": "doonetheprune",
+  "license": "MIT",
+  "dependencies": {
+    "dockerode": "^4.0.0",
+    "handlebars": "^4.7.7",
+    "js-yaml": "^4.1.0",
+    "yargs": "^17.7.2"
+  },
+  "devDependencies": {
+    "@types/node": "^16.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
+  }
+}

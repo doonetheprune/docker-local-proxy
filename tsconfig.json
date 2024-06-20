@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "module": "CommonJS",
+    "target": "ES2018",
+    "esModuleInterop": true,
+    "moduleResolution": "node"
+  },
+  "ts-node": {
+    "transpileOnly": true,
+    "compilerOptions": {
+      "module": "CommonJS"
+    }
+  },
+  "include": [
+    "src/**/*"                       // Include all files in the src folder
+  ],
+  "exclude": [
+    "node_modules",                  // Exclude the node_modules directory
+    "**/*.spec.ts"                   // Exclude test files
+  ]
+}
