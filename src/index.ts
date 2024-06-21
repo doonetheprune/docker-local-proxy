@@ -76,18 +76,35 @@ async function ensureDirectory() {
 interface ContainerInfo {
     id: string,
     name: string;
+    fullName: string;
     hostname: string;
 }
 
 async function fetchRunningContainers(): Promise<ContainerInfo[]> {
     const containers = await docker.listContainers();
-    return containers
-        .filter(container => container.Names.some(name => name.includes(argv.filterName)))
-        .map(container => ({
+    const filteredContainers = containers
+        .filter(container => container.Names.some(name => name.includes(argv.filterName)));
+
+    const containerInfos = filteredContainers.map(container => {
+        // Default hostname construction from container name
+        const defaultName = container.Names[0].replace(/^\//, '').split('-')[0];
+        const defaultHostname = `${defaultName}.localhost`;
+
+        // Check if there is a 'hostname' label and use the value after '=' if present
+        let hostname = defaultHostname; // Default to constructed hostname
+        if (container.Labels && container.Labels['hostname']) {
+            hostname = container.Labels['hostname']
+        }
+
+        return {
             id: container.Id,
-            name: container.Names[0].replace(/^\//, '').split('-')[0],
-            hostname: `${container.Names[0].replace(/^\//, '').split('-')[0]}.localhost`
-        }));
+            name: defaultName,
+            fullName: container.Names[0],
+            hostname: hostname
+        };
+    });
+
+    return containerInfos;
 }
 
 // Check if containers are connected to the specified network
@@ -208,20 +225,24 @@ async function createDockerNetwork() {
 }
 
 function runDockerComposeUp() {
-    const options = {
-        cwd: PROJECT_ROOT
-    };
+    return new Promise((resolve, reject) => {
+        const options = {
+            cwd: PROJECT_ROOT
+        };
 
-    exec('docker-compose -p docker-local-proxy up -d', options, (error, stdout, stderr) => {
-        if (error) {
-            console.error(`Error running docker-compose up: ${error.message}`);
-            return;
-        }
-        if (stderr) {
-            console.error(`stderr: ${stderr}`);
-        }
-        console.log(`stdout: ${stdout}`);
-    });
+        exec('docker-compose -p docker-local-proxy up -d', options, (error, stdout, stderr) => {
+            if (error) {
+                console.error(`Error running docker-compose up: ${error.message}`);
+                return;
+            }
+            if (stderr) {
+                console.error(`stderr: ${stderr}`);
+                resolve(stdout)
+            }
+            console.log(`stdout: ${stdout}`);
+            resolve(stdout)
+        });
+    })
 }
 
 async function main() {
@@ -249,7 +270,10 @@ async function main() {
     }
 
     updateDockerComposePorts(argv.httpPort, argv.tcpPort);
-    runDockerComposeUp();
+    await runDockerComposeUp();
+
+    console.log('Containers Found:')
+    containers.forEach(({hostname,fullName}) => console.log('   - Container',fullName, 'Hostname:', hostname, 'HTTP:', argv.httpPort.join(', '), 'TCP:', argv.tcpPort.join(', ')))
 }
 
 main();

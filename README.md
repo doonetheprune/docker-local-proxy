@@ -52,7 +52,7 @@ docker-local-proxy
 docker-local-proxy --httpPort 8080,8081 --tcpPort 5433,5434 --filterName "my-proxy"
 ```
 
-## Network Configuration
+## Docker container Configuration
 
 Ensure that your Docker containers are on the `docker-local-proxy` network. Here is an example Docker Compose configuration:
 
@@ -60,6 +60,8 @@ Ensure that your Docker containers are on the `docker-local-proxy` network. Here
 services:
   internal-proxy:
     image: traefik:v2.5
+    labels:
+      - "hostname=my-custom-subdomain.localhost"
     command:
       - "--api.insecure=true"
       - "--providers.docker=true"
@@ -80,6 +82,9 @@ networks:
       config:
         - subnet: 172.25.0.0/16
 ```
+
+### Adding a Hostname Label
+To add a hostname label, specify it in the labels section of your service in the Docker Compose file. The label should follow the format hostname=custom-hostname, where custom-hostname is the desired hostname. This label allows network services, like proxies or load balancers, to recognize the container by the specified hostname instead of just taking the first word up to the dash in the container name.
 
 ## Generated Files
 
