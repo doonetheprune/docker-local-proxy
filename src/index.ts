@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 // src/index.ts
 
 import Docker from 'dockerode';
