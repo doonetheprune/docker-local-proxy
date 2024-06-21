@@ -1,9 +1,18 @@
 {
   "compilerOptions": {
-    "module": "CommonJS",
-    "target": "ES2018",
-    "esModuleInterop": true,
-    "moduleResolution": "node"
+    "target": "es2018",              // Compile to a version of ECMAScript that supports async/await
+    "module": "commonjs",            // Use commonjs module system, as used by Node.js
+    "esModuleInterop": true,         // Allows default imports from modules with no default export
+    "skipLibCheck": true,            // Skip type checking of declaration files
+    "forceConsistentCasingInFileNames": true, // Disallow inconsistently-cased references to the same file
+    "moduleResolution": "node",      // Use Node.js module resolution mechanism
+    "outDir": "./dist",              // Redirect output structure to the directory
+    "baseUrl": ".",                  // Base directory to resolve non-relative module names
+    "paths": {
+      "*": ["node_modules/*"]        // Add paths for module resolution
+    },
+    "resolveJsonModule": true,       // Allow importing json files
+    "sourceMap": true                // Create source map files for debugging
   },
   "ts-node": {
     "transpileOnly": true,

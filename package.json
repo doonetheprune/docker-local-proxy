@@ -1,6 +1,6 @@
 {
   "name": "docker-local-proxy",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A tool for automatically configuring Nginx and updating /etc/hosts based on Docker containers for local development environments.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
