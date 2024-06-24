@@ -99,7 +99,7 @@ async function fetchRunningContainers(): Promise<ContainerInfo[]> {
         return {
             id: container.Id,
             name: defaultName,
-            fullName: container.Names[0],
+            fullName: container.Names[0].slice(1),
             hostname: hostname
         };
     });
@@ -123,15 +123,42 @@ async function checkContainersOnNetwork(containers: ContainerInfo[], networkName
 }
 
 function generateNginxConfigs(containers: ContainerInfo[]): { httpConfig: string, tcpConfig: string } {
-    const httpTemplate = `
+    const httpTemplate = `    
 {{#each containers}}
   {{#each ../httpPort}}
+  
+# Default server block to catch all other requests
+server {
+    listen {{this}};
+    server_name _;  # Wildcard server name to catch all requests
+
+    # Return a 404 Forbidden error for any unmatched server_name
+    location / {
+        return 404 '{"status": 404, "message": "No cluster found for subdomain provided"}';
+        add_header Content-Type application/json;
+    }
+}
+  
 server {
     listen {{this}};
     server_name {{../this.hostname}};
     
+    error_page 404 500 502 503 504 @custom_error;
+    proxy_intercept_errors on;
+    
+    set $original_uri $request_uri;
+
+    # Custom error handling location
+    location @custom_error {
+        internal;
+        # You can use more variables here to make the error message more informative
+        return 200 '{"status": "$status", "message": "Error occurred", "inbound_url": "$original_uri", "attempted_url": "$attempted_url", "proxy": "host-wide-local-proxy"}';
+        add_header Content-Type application/json;
+    }
+    
     location / {
-        proxy_pass http://{{../this.name}}-internal-proxy-1:{{this}};
+        set $attempted_url http://{{../this.fullName}}:{{this}};
+        proxy_pass $attempted_url;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -146,7 +173,7 @@ server {
   {{#each ../tcpPort}}
 server {
     listen {{this}};
-    proxy_pass {{../this.name}}-internal-proxy-1:{{this}};
+    proxy_pass {{../this.fullName}}:{{this}};
 }
   {{/each}}
 {{/each}}
