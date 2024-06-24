@@ -50,6 +50,12 @@ const argv = yargs(hideBin(process.argv))
         type: 'boolean',
         default: false
     })
+    .option('hostsOnly', {
+        alias: 'o',
+        description: 'Only update the hosts file',
+        type: 'boolean',
+        default: false
+    })
     .help()
     .alias('help', 'h')
     .argv;
@@ -273,16 +279,26 @@ function runDockerComposeUp() {
 }
 
 async function main() {
+    const containers = await fetchRunningContainers();
+
     if (argv.networkOnly) {
         console.log('Only Creating The Network')
         await createDockerNetwork();
+        return;
+    }else if (argv.hostsOnly) {
+        console.log('Only Updating the Hosts File');
+        if (process.getuid && process.getuid() === 0) {
+            await updateHostsFile(containers);
+            console.log('Successfully updated /etc/hosts.');
+        } else {
+            console.error('Administrative privileges required to update /etc/hosts.');
+        }
         return;
     }
 
     await ensureDirectory();  // Ensure the generated directory exists
     await createDockerNetwork()
 
-    const containers = await fetchRunningContainers();
     await checkContainersOnNetwork(containers, NETWORK_NAME);  // Check if containers are on the network
     const {httpConfig, tcpConfig} = generateNginxConfigs(containers);
 
