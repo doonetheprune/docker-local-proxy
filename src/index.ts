@@ -149,7 +149,7 @@ server {
     listen {{this}};
     server_name {{../this.hostname}};
     
-    error_page 404 500 502 503 504 @custom_error;
+    error_page 502 503 504 @custom_error;
     proxy_intercept_errors on;
     
     set $original_uri $request_uri;
