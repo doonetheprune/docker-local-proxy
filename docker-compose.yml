@@ -6,6 +6,7 @@ services:
     ports:
       - '80:80'
       - '5432:5432'
+      - '5433:5433'
     volumes:
       - ./config/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./generated/http_proxies.conf:/etc/nginx/http_proxies.conf:ro

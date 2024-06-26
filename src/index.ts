@@ -178,7 +178,7 @@ server {
 {{#each containers}}
   {{#each ../tcpPort}}
 server {
-    listen {{this}};
+    listen {{add this @../index}};
     proxy_pass {{../this.fullName}}:{{this}};
 }
   {{/each}}
@@ -187,6 +187,10 @@ server {
 
     const httpCompiledTemplate = Handlebars.compile(httpTemplate);
     const tcpCompiledTemplate = Handlebars.compile(tcpTemplate);
+
+    Handlebars.registerHelper('add', function (a, b) {
+        return a + b;
+    });
 
     return {
         httpConfig: httpCompiledTemplate({containers, httpPort: argv.httpPort}),
@@ -209,8 +213,14 @@ async function updateHostsFile(containers: ContainerInfo[]) {
     await writeFile(HOSTS_PATH, contents, 'utf8');
 }
 
+// Create Docker network if it doesn't exist
+async function createDockerNetwork() {
+    const networkName = 'docker-local-proxy';
+    const networks = await docker.listNetworks();
+    const networkExists = networks.some(network => network.Name === networkName);
+}
 
-function updateDockerComposePorts(httpPorts: number[], tcpPorts: number[]) {
+function updateDockerCompose(containers: ContainerInfo[],httpPorts: number[], tcpPorts: number[]) {
     const composePath = PROJECT_ROOT + '/docker-compose.yml';
 
     try {
@@ -221,13 +231,11 @@ function updateDockerComposePorts(httpPorts: number[], tcpPorts: number[]) {
 
             // Generate new port mappings for HTTP and TCP
             const newHttpPorts = httpPorts.map(port => `${port}:${port}`);
-            const newTcpPorts = tcpPorts.map(port => `${port}:${port}`);
-
-            // Filter out old HTTP and TCP ports to avoid duplicates
-            const filteredPorts = existingPorts.filter((p: string) => !p.startsWith('80:') && !p.startsWith('443:') && !p.startsWith('5432:'));
-
+            const newTcpPorts = containers.flatMap((_, index) =>
+                tcpPorts.map(port => `${port + index}:${port + index}`)
+            );
             // Combine existing with new ports
-            doc.services['nginx-proxy'].ports = [...filteredPorts, ...newHttpPorts, ...newTcpPorts];
+            doc.services['nginx-proxy'].ports = [ ...newHttpPorts, ...newTcpPorts];
         }
 
         // Write back the updated configuration
@@ -237,23 +245,6 @@ function updateDockerComposePorts(httpPorts: number[], tcpPorts: number[]) {
         console.log('Updated Docker Compose file with new TCP ports:', tcpPorts.join(', '));
     } catch (e) {
         console.error('Failed to update Docker Compose file:', e);
-    }
-}
-
-// Create Docker network if it doesn't exist
-async function createDockerNetwork() {
-    const networkName = 'docker-local-proxy';
-    const networks = await docker.listNetworks();
-    const networkExists = networks.some(network => network.Name === networkName);
-
-    if (!networkExists) {
-        await docker.createNetwork({
-            Name: networkName,
-            Driver: 'bridge'
-        });
-        console.log(`Network ${networkName} created.`);
-    } else {
-        console.log(`Network ${networkName} already exists.`);
     }
 }
 
@@ -312,11 +303,14 @@ async function main() {
         console.error('Administrative privileges required to update /etc/hosts.');
     }
 
-    updateDockerComposePorts(argv.httpPort, argv.tcpPort);
+    updateDockerCompose(containers, argv.httpPort, argv.tcpPort);
     await runDockerComposeUp();
 
-    console.log('Containers Found:')
-    containers.forEach(({hostname,fullName}) => console.log('   - Container',fullName, 'Hostname:', hostname, 'HTTP:', argv.httpPort.join(', '), 'TCP:', argv.tcpPort.join(', ')))
+    containers.forEach((container, index) => {
+        const httpBindings = argv.httpPort.join(', ');
+        const tcpBindings = argv.tcpPort.map(port => `${port + index}:${port}`).join(', ');
+        console.log(`   - Container: ${container.fullName}, Hostname: ${container.hostname}, HTTP: ${httpBindings}, TCP: ${tcpBindings}`);
+    });
 }
 
 main();
