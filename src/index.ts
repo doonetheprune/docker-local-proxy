@@ -218,6 +218,18 @@ async function createDockerNetwork() {
     const networkName = 'docker-local-proxy';
     const networks = await docker.listNetworks();
     const networkExists = networks.some(network => network.Name === networkName);
+
+    if (!networkExists) {
+        // Network does not exist, so create it
+        try {
+            const network = await docker.createNetwork({ Name: networkName });
+            console.log('Network created:', network.id);
+        } catch (error) {
+            console.error('Failed to create network:', error);
+        }
+    } else {
+        console.log('Network already exists.');
+    }
 }
 
 function updateDockerCompose(containers: ContainerInfo[],httpPorts: number[], tcpPorts: number[]) {
