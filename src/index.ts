@@ -266,7 +266,7 @@ function runDockerComposeUp() {
             cwd: PROJECT_ROOT
         };
 
-        exec('docker-compose -p docker-local-proxy up -d', options, (error, stdout, stderr) => {
+        exec('docker compose -p docker-local-proxy up -d', options, (error, stdout, stderr) => {
             if (error) {
                 console.error(`Error running docker-compose up: ${error.message}`);
                 return;
