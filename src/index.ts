@@ -50,6 +50,11 @@ const argv = yargs(hideBin(process.argv))
         type: 'boolean',
         default: false
     })
+    .option('redirectHttps', {
+        description: 'Redirect https to http',
+        type: 'boolean',
+        default: true
+    })
     .option('hostsOnly', {
         alias: 'o',
         description: 'Only update the hosts file',
@@ -246,6 +251,11 @@ function updateDockerCompose(containers: ContainerInfo[],httpPorts: number[], tc
             const newTcpPorts = containers.flatMap((_, index) =>
                 tcpPorts.map(port => `${port + index}:${port + index}`)
             );
+
+            if(argv.redirectHttps === true){
+                newHttpPorts.push('443:443')
+            }
+
             // Combine existing with new ports
             doc.services['nginx-proxy'].ports = [ ...newHttpPorts, ...newTcpPorts];
         }

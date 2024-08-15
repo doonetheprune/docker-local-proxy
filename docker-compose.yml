@@ -4,8 +4,12 @@ services:
     container_name: nginx-top-level-proxy
     ports:
       - '80:80'
+      - '443:443'
       - '5432:5432'
+      - '5433:5433'
     volumes:
+      - ./certs/localhost.crt:/etc/nginx/ssl/localhost.crt
+      - ./certs/localhost.key:/etc/nginx/ssl/localhost.key
       - ./config/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./generated/http_proxies.conf:/etc/nginx/http_proxies.conf:ro
       - ./generated/tcp_proxies.conf:/etc/nginx/tcp_proxies.conf:ro
