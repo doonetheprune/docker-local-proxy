@@ -36,7 +36,7 @@ const argv = yargs(hideBin(process.argv))
             }
             return arg;
         },
-        default: [5432]
+        default: [5432, 15672]
     })
     .option('filterName', {
         alias: 'f',
